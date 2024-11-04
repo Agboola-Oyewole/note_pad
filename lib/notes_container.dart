@@ -27,7 +27,11 @@ class NotesContainer extends StatelessWidget {
             height: 8,
           ),
           Text(
-            note.content,
+            note.content.isEmpty
+                ? 'No text'
+                : note.content.length > 50
+                    ? '${note.content.substring(0, 50)}....'
+                    : note.content,
             style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 15,

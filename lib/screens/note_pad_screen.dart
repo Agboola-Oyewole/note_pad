@@ -277,7 +277,7 @@ class _NotePadScreenState extends State<NotePadScreen> {
                     ),
                     SizedBox(height: 15),
                     Text(
-                      Provider.of<NoteProvider>(context).currentNote.date,
+                      '${_contentController.text.length} Character${_contentController.text.length < 2 ? '' : 's'}  |  ${Provider.of<NoteProvider>(context).currentNote.date}',
                       style: TextStyle(
                         color: Colors.grey,
                       ),

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
 class SearchBarCustom extends StatelessWidget {
-  const SearchBarCustom({super.key});
+  const SearchBarCustom(
+      {super.key, required this.controller, required this.focusNode});
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +24,8 @@ class SearchBarCustom extends StatelessWidget {
           SizedBox(width: 15),
           Expanded(
             child: TextField(
+              controller: controller,
+              focusNode: focusNode,
               style: TextStyle(color: Colors.white, fontSize: 19),
               decoration: InputDecoration(
                 hintText: 'Search notes',
