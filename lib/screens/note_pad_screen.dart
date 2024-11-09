@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:note_pad/screens/home_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../note_provider.dart';
@@ -30,7 +31,8 @@ class _NotePadScreenState extends State<NotePadScreen> {
         TextEditingController(text: noteProvider.currentNote.title);
     _contentController =
         TextEditingController(text: noteProvider.currentNote.content);
-    print(noteProvider.currentNote.textStyle);
+    print('Created int: ${noteProvider.currentNote.createInt}');
+    print('IspINNED int: ${noteProvider.currentNote.isPinned}');
     setState(() {
       // Set font size from current note's textStyle
       _fontSize = noteProvider.currentNote.textStyle.fontSize ?? 18;
@@ -216,7 +218,20 @@ class _NotePadScreenState extends State<NotePadScreen> {
       appBar: AppBar(
         surfaceTintColor: Theme.of(context).colorScheme.surface,
         backgroundColor: Theme.of(context).colorScheme.surface,
-        leading: null,
+        leading: GestureDetector(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => HomeScreen(),
+              ),
+            );
+          },
+          child: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: 28,
+          ),
+        ),
         actions: <Widget>[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),

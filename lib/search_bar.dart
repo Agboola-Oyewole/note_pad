@@ -40,12 +40,12 @@ class SearchBarCustom extends StatelessWidget {
             color: Colors.grey[400],
             size: 28,
           ),
-          SizedBox(width: 15),
-          Icon(
-            Icons.settings,
-            color: Colors.grey[400],
-            size: 28,
-          )
+          // SizedBox(width: 15),
+          // Icon(
+          //   Icons.settings,
+          //   color: Colors.grey[400],
+          //   size: 28,
+          // )
         ],
       ),
     );

@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'note.dart';
 
 class NotesContainer extends StatelessWidget {
-  const NotesContainer({super.key, required this.note});
+  const NotesContainer({
+    super.key,
+    required this.note,
+  });
 
   final Note note;
 
@@ -11,17 +14,32 @@ class NotesContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFF333333), // Dark background color for the search bar
-        borderRadius: BorderRadius.circular(15),
-      ),
+          color: Color(0xFF333333), // Dark background color for the search bar
+          borderRadius: BorderRadius.circular(15),
+          border: note.isSelected
+              ? Border.all(color: Colors.white, width: 2)
+              : null),
       padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            note.title,
-            style: TextStyle(
-                fontWeight: FontWeight.w900, fontSize: 20, color: Colors.white),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                note.title,
+                style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                    color: Colors.white),
+              ),
+              note.isPinned
+                  ? Icon(
+                      Icons.push_pin,
+                      color: Color(0xffB17457),
+                    )
+                  : Container()
+            ],
           ),
           SizedBox(
             height: 8,
