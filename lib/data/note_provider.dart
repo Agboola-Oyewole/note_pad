@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'note.dart';
@@ -8,10 +9,13 @@ import 'note.dart';
 class NoteProvider extends ChangeNotifier {
   List<Note> _notes = [];
   int _currentNoteIndex = 0;
+  bool _isGridView = false;
 
   List<Note> get notes => _notes;
 
   Note get currentNote => _notes[_currentNoteIndex];
+
+  bool get isGridView => _isGridView;
 
   NoteProvider() {
     loadNotes();
@@ -21,10 +25,15 @@ class NoteProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final notesString = prefs.getString('notes');
     final int? savedCreateInt = prefs.getInt('currentCreateInt');
+    final bool? savedDisplayStyle = prefs.getBool('isGridView'); // Lo
 
     if (savedCreateInt != null) {
       // If the saved createInt exists, we set it
       Note.currentCreateInt = savedCreateInt;
+    }
+
+    if (savedDisplayStyle != null) {
+      _isGridView = savedDisplayStyle;
     }
 
     if (notesString != null) {
@@ -50,10 +59,21 @@ class NoteProvider extends ChangeNotifier {
   Future<void> saveNotes() async {
     final prefs = await SharedPreferences.getInstance();
     final notesString =
-        json.encode(_notes.map((note) => note.toJson()).toList());
+    json.encode(_notes.map((note) => note.toJson()).toList());
     await prefs.setString('notes', notesString);
     // Save the latest _currentCreateInt value in SharedPreferences
     await prefs.setInt('currentCreateInt', Note.currentCreateInt);
+  }
+
+  Future<void> saveDisplayStyle() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isGridView', _isGridView); // Persist displayStyle
+  }
+
+  void toggleDisplayStyle() {
+    _isGridView = !_isGridView;
+    saveDisplayStyle(); // Save the updated displayStyle
+    notifyListeners();
   }
 
   void addNote() {
@@ -97,7 +117,7 @@ class NoteProvider extends ChangeNotifier {
 
   void updateCurrentNoteIsSelected() {
     _notes[_currentNoteIndex].isSelected =
-        !_notes[_currentNoteIndex].isSelected;
+    !_notes[_currentNoteIndex].isSelected;
     saveNotes();
     notifyListeners();
   }
@@ -139,17 +159,15 @@ class NoteProvider extends ChangeNotifier {
     List<Note> pinnedNotes = _notes.where((note) => note.isPinned).toList();
     List<Note> unpinnedNotes = _notes.where((note) => !note.isPinned).toList();
 
-    // Manually sort unpinned notes by createInt in ascending order (lower values first)
-    for (int i = 0; i < unpinnedNotes.length; i++) {
-      for (int j = i + 1; j < unpinnedNotes.length; j++) {
-        if (unpinnedNotes[i].createInt > unpinnedNotes[j].createInt) {
-          // Swap elements if they are in the wrong order
-          Note temp = unpinnedNotes[i];
-          unpinnedNotes[i] = unpinnedNotes[j];
-          unpinnedNotes[j] = temp;
-        }
-      }
-    }
+    // Define a date format matching your note date format
+    final dateFormat = DateFormat("d'th' MMMM yyyy h:mm a");
+
+    // Sort unpinned notes by date in descending order (latest first)
+    unpinnedNotes.sort((a, b) {
+      final DateTime dateA = dateFormat.parse(a.date);
+      final DateTime dateB = dateFormat.parse(b.date);
+      return dateB.compareTo(dateA); // Descending order
+    });
 
     // Combine pinned notes first, followed by sorted unpinned notes
     _notes = [...pinnedNotes, ...unpinnedNotes];
@@ -158,33 +176,13 @@ class NoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<Note> filterNotes(List<Note> notes) {
-    // Separate pinned and unpinned notes
-    List<Note> pinnedNotes = notes.where((note) => note.isPinned).toList();
-    List<Note> unpinnedNotes = notes.where((note) => !note.isPinned).toList();
-
-    // Manually sort unpinned notes by createInt in ascending order (lower values first)
-    for (int i = 0; i < unpinnedNotes.length; i++) {
-      for (int j = i + 1; j < unpinnedNotes.length; j++) {
-        if (unpinnedNotes[i].createInt > unpinnedNotes[j].createInt) {
-          // Swap elements if they are in the wrong order
-          Note temp = unpinnedNotes[i];
-          unpinnedNotes[i] = unpinnedNotes[j];
-          unpinnedNotes[j] = temp;
-        }
-      }
-    }
-
-    // Combine pinned notes first, followed by sorted unpinned notes
-    return [...pinnedNotes, ...unpinnedNotes];
-  }
-
   // Method to format the date as "4th September 2024 12:23 AM"
   static String _formatDate(DateTime dateTime) {
     final int day = dateTime.day;
     final String suffix = _getSuffix(day);
     final String formattedDate =
-        '$day$suffix ${_getMonth(dateTime.month)} ${dateTime.year} ${_formatTime(dateTime)}';
+        '$day$suffix ${_getMonth(dateTime.month)} ${dateTime
+        .year} ${_formatTime(dateTime)}';
     return formattedDate;
   }
 
@@ -224,7 +222,7 @@ class NoteProvider extends ChangeNotifier {
 
   static String _formatTime(DateTime dateTime) {
     final String hour =
-        dateTime.hour % 12 == 0 ? '12' : (dateTime.hour % 12).toString();
+    dateTime.hour % 12 == 0 ? '12' : (dateTime.hour % 12).toString();
     final String minute = dateTime.minute.toString().padLeft(2, '0');
     final String period = dateTime.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:note_pad/screens/home_screen.dart';
 import 'package:provider/provider.dart';
 
-import '../note_provider.dart';
+import '../data/note_provider.dart';
 
 class NotePadScreen extends StatefulWidget {
   const NotePadScreen({super.key});
@@ -156,6 +156,8 @@ class _NotePadScreenState extends State<NotePadScreen> {
     noteProvider.updateCurrentNoteContent(_contentController.text);
     noteProvider.updateCurrentNoteTextStyle(_currentStyle);
     noteProvider.updateCurrentNoteDate(_formatDate(DateTime.now()));
+    noteProvider.filterNotesByPinned();
+    setState(() {});
 
     setState(() {
       _isSaved = true;
@@ -213,6 +215,7 @@ class _NotePadScreenState extends State<NotePadScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final noteProvider = Provider.of<NoteProvider>(context, listen: false);
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
@@ -228,7 +231,9 @@ class _NotePadScreenState extends State<NotePadScreen> {
           },
           child: Icon(
             Icons.arrow_back,
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,
             size: 28,
           ),
         ),
@@ -240,8 +245,11 @@ class _NotePadScreenState extends State<NotePadScreen> {
               children: [
                 IconButton(
                   icon: Icon(Icons.undo,
-                      color:
-                          _historyIndex > 0 ? Colors.white : Colors.grey[700],
+                      color: _historyIndex > 0
+                          ? Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black
+                          : Colors.grey[300],
                       size: 28),
                   onPressed: _historyIndex > 0 ? _undo : null,
                 ),
@@ -249,8 +257,10 @@ class _NotePadScreenState extends State<NotePadScreen> {
                 IconButton(
                   icon: Icon(Icons.redo,
                       color: _historyIndex < _contentHistory.length - 1
-                          ? Colors.white
-                          : Colors.grey[700],
+                          ? Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black
+                          : Colors.grey[300],
                       size: 28),
                   onPressed:
                       _historyIndex < _contentHistory.length - 1 ? _redo : null,
@@ -258,7 +268,11 @@ class _NotePadScreenState extends State<NotePadScreen> {
                 SizedBox(width: 20),
                 IconButton(
                   icon: Icon(Icons.check,
-                      color: _isSaved ? Colors.grey[700] : Colors.white,
+                      color: _isSaved
+                          ? Colors.grey[300]
+                          : Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black,
                       size: 28),
                   onPressed: _isSaved ? null : _saveChanges,
                 ),
@@ -280,32 +294,57 @@ class _NotePadScreenState extends State<NotePadScreen> {
                   children: [
                     TextField(
                       controller: _titleController,
-                      cursorColor: Colors.white,
+                      cursorColor:
+                          Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black,
                       decoration: InputDecoration(
+                        hintText: 'Title',
+                        hintStyle: TextStyle(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.grey.withOpacity(0.4)
+                                    : Colors.grey[400]),
                         border: InputBorder.none,
                       ),
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black,
                         fontSize: 30,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                     SizedBox(height: 15),
                     Text(
-                      '${_contentController.text.length} Character${_contentController.text.length < 2 ? '' : 's'}  |  ${Provider.of<NoteProvider>(context).currentNote.date}',
+                      '${_contentController.text.length} Character${_contentController.text.length < 2 ? '' : 's'}  |  ${noteProvider.currentNote.date}',
                       style: TextStyle(
-                        color: Colors.grey,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey
+                            : Colors.grey[600],
                       ),
                     ),
                     SizedBox(height: 25),
                     TextField(
                       controller: _contentController,
                       maxLines: null,
-                      cursorColor: Colors.white,
+                      cursorColor:
+                          Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black,
                       decoration: InputDecoration(
+                        hintText: 'Start Typing',
+                        hintStyle: TextStyle(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.grey.withOpacity(0.4)
+                                    : Colors.grey[400]),
                         border: InputBorder.none,
                       ),
-                      style: _currentStyle,
+                      style: _currentStyle.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black),
                       textAlign: _textAlign,
                       onChanged: (value) {
                         // Only save to history if the content has changed
@@ -322,74 +361,103 @@ class _NotePadScreenState extends State<NotePadScreen> {
                 ),
               ),
             ),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 20.0, horizontal: 20),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                    border: Theme.of(context).brightness == Brightness.dark
+                        ? null
+                        : Border(
+                            top: BorderSide(color: Colors.black, width: 2))),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
                     IconButton(
                       icon: Icon(Icons.text_increase,
                           size: 30,
-                          color: _fontSize > 1 ? Colors.white : Colors.grey),
+                          color: _fontSize > 1
+                              ? Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black
+                              : Colors.grey[400]),
                       onPressed: _increaseFontSize,
                     ),
-                    SizedBox(width: 20),
+                    SizedBox(width: 15),
                     IconButton(
                       icon: Icon(Icons.text_decrease,
                           size: 30,
-                          color: _fontSize > 10 ? Colors.white : Colors.grey),
+                          color: _fontSize > 10
+                              ? Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black
+                              : Colors.grey[400]),
                       onPressed: _decreaseFontSize,
                     ),
-                    SizedBox(width: 20),
+                    SizedBox(width: 15),
                     IconButton(
                       icon: Icon(Icons.format_bold,
                           size: 30,
-                          color: _isBold ? Color(0xffB17457) : Colors.white),
+                          color: _isBold
+                              ? Color(0xffB17457)
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black),
                       onPressed: _toggleBold,
                     ),
-                    SizedBox(width: 20),
+                    SizedBox(width: 15),
                     IconButton(
                       icon: Icon(Icons.format_underline,
                           size: 30,
-                          color:
-                              _isUnderline ? Color(0xffB17457) : Colors.white),
+                          color: _isUnderline
+                              ? Color(0xffB17457)
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black),
                       onPressed: _toggleUnderline,
                     ),
-                    SizedBox(width: 20),
+                    SizedBox(width: 15),
                     IconButton(
                       icon: Icon(Icons.format_italic,
                           size: 30,
-                          color: _isItalic ? Color(0xffB17457) : Colors.white),
+                          color: _isItalic
+                              ? Color(0xffB17457)
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black),
                       onPressed: _toggleItalic,
                     ),
-                    SizedBox(width: 20),
+                    SizedBox(width: 15),
                     IconButton(
                       icon: Icon(Icons.format_align_left,
                           size: 30,
                           color: _textAlign == TextAlign.left
                               ? Color(0xffB17457)
-                              : Colors.white),
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black),
                       onPressed: () => _setTextAlign(TextAlign.left),
                     ),
-                    SizedBox(width: 20),
+                    SizedBox(width: 15),
                     IconButton(
                       icon: Icon(Icons.format_align_center,
                           size: 30,
                           color: _textAlign == TextAlign.center
                               ? Color(0xffB17457)
-                              : Colors.white),
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black),
                       onPressed: () => _setTextAlign(TextAlign.center),
                     ),
-                    SizedBox(width: 20),
+                    SizedBox(width: 15),
                     IconButton(
                       icon: Icon(Icons.format_align_right,
                           size: 30,
                           color: _textAlign == TextAlign.right
                               ? Color(0xffB17457)
-                              : Colors.white),
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black),
                       onPressed: () => _setTextAlign(TextAlign.right),
                     ),
                   ],

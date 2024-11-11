@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:note_pad/category_container.dart';
-import 'package:note_pad/notes_container.dart';
+import 'package:note_pad/components/notes_container.dart';
 import 'package:note_pad/screens/note_pad_screen.dart';
-import 'package:note_pad/search_bar.dart';
 import 'package:provider/provider.dart';
 
-import '../note.dart';
-import '../note_provider.dart';
+import '../components/category_container.dart';
+import '../data/note.dart';
+import '../data/note_provider.dart';
 
-// TODO: Work on when changes are made to a note it becomes the first
-// TODO: Work on the grid and menu showing
+// TODO: Work on when changes are made to a note it becomes the first*
+// TODO: Work on the grid and menu showing *
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode(); // Focus node for search bar
+  late NoteProvider noteProvider;
 
   bool _isScrollingDown = false;
   bool _showSearchBar = true;
@@ -34,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // // Load notes when the screen initializes
     // _loadNotesAndInitialize();
+    noteProvider = Provider.of<NoteProvider>(context, listen: false);
 
     _scrollController.addListener(() {
       final userScrollDirection =
@@ -95,9 +96,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final noteProvider = Provider.of<NoteProvider>(context, listen: false);
-    print(noteProvider.notes.length);
-    setState(() {});
     // noteProvider.filterNotesByPinned();
 
     return Scaffold(
@@ -115,257 +113,583 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 40,
-                    color: Colors.grey[400],
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[400]
+                        : Colors.black,
                   ),
                 ),
                 if (_showIcons)
                   Row(
                     children: [
-                      Icon(Icons.grid_view_rounded,
-                          color: Colors.grey[400], size: 28),
+                      GestureDetector(
+                        onTap: () {
+                          noteProvider.toggleDisplayStyle();
+                          setState(() {});
+                          print(noteProvider.isGridView);
+                        },
+                        child: Icon(
+                            noteProvider.isGridView
+                                ? Icons.menu
+                                : Icons.grid_view_rounded,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                            size: 28),
+                      ),
                     ],
                   ),
               ],
             ),
             if (_showSearchBar) SizedBox(height: 20),
             if (_showSearchBar)
-              SearchBarCustom(
-                controller: _searchController,
-                focusNode:
-                    _searchFocusNode, // Set the focus node for search bar
+              Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Color(0xFF333333)
+                      : Colors.grey[300],
+                  // Dark background color for the search bar
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.search,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[500]
+                          : Colors.grey,
+                    ),
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        focusNode: _searchFocusNode,
+                        style: TextStyle(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black,
+                            fontSize: 19),
+                        decoration: InputDecoration(
+                          hintText: 'Search notes',
+                          hintStyle: TextStyle(
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.grey[500]
+                                  : Colors.grey),
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        noteProvider.toggleDisplayStyle();
+                        setState(() {});
+                        print(noteProvider.isGridView);
+                      },
+                      child: Icon(
+                        noteProvider.isGridView
+                            ? Icons.menu
+                            : Icons.grid_view_rounded,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[400]
+                            : Colors.grey[600],
+                        size: 28,
+                      ),
+                    ),
+                    // SizedBox(width: 15),
+                    // Icon(
+                    //   Icons.settings,
+                    //   color: Colors.grey[400],
+                    //   size: 28,
+                    // )
+                  ],
+                ),
               ),
             SizedBox(height: 25),
             Row(
               children: [
-                CategoryContainer(text: 'All (${noteProvider.notes.length})'),
+                CategoryContainer(
+                    text: _searchController.text.isEmpty
+                        ? 'All (${noteProvider.notes.length})'
+                        : 'All (${_filteredNotes.length})'),
               ],
             ),
             SizedBox(height: 30),
             Expanded(
               child: _searchController.text.isEmpty
                   ? noteProvider.notes.isNotEmpty
-                      ? ListView.builder(
-                          controller: _scrollController,
-                          padding: EdgeInsets.all(0),
-                          itemCount: noteProvider.notes.length,
-                          itemBuilder: (context, index) {
-                            final note = noteProvider.notes[
-                                index]; // Access note directly, no changes to order
-
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 15.0),
-                              child: GestureDetector(
-                                onLongPress: () {
-                                  _searchFocusNode.unfocus();
-                                  noteProvider.switchToNoteAt(note);
-                                  print(
-                                      'Note ${noteProvider.currentNote.title}, selected current: ${noteProvider.currentNote.isSelected}');
-                                  noteProvider.updateCurrentNoteIsSelected();
-                                  print(
-                                      'Note ${noteProvider.currentNote.title}, selected current: ${noteProvider.currentNote.isSelected}');
-                                  setState(() {});
-                                  showModalBottomSheet(
-                                    context: context,
-                                    backgroundColor: Colors.grey[850],
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(20)),
-                                    ),
-                                    builder: (context) => Container(
-                                      height: 120,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 20.0, horizontal: 30.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceEvenly,
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () {
-                                              print(
-                                                  'Previous value: ${noteProvider.currentNote.isPinned}');
-                                              noteProvider.switchToNoteAt(note);
-                                              noteProvider
-                                                  .updateCurrentNoteIsPinned();
-                                              // setState(() {
-                                              //   _filteredNotes =
-                                              //       noteProvider.filterNotes(
-                                              //           noteProvider.notes);
-                                              // });
-                                              noteProvider
-                                                  .filterNotesByPinned();
-                                              setState(() {});
-                                              Navigator.pop(context);
-                                              print(
-                                                  'Current value: ${noteProvider.currentNote.isPinned}');
-                                            },
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.push_pin_outlined,
-                                                    color: Colors.white,
-                                                    size: 30),
-                                                SizedBox(height: 5),
-                                                Text('Pin',
-                                                    style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.w900,
-                                                        fontSize: 20)),
-                                              ],
+                      ? noteProvider.isGridView
+                          ? GridView.builder(
+                              controller: _scrollController,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount:
+                                    2, // Number of columns in the grid
+                                crossAxisSpacing:
+                                    10, // Horizontal space between grid items
+                                mainAxisSpacing:
+                                    10, // Vertical space between grid items
+                                childAspectRatio: 4.6 /
+                                    4, // Width to height ratio of each item
+                              ),
+                              padding: const EdgeInsets.all(0),
+                              itemCount: noteProvider.notes.length,
+                              itemBuilder: (context, index) {
+                                final note = noteProvider.notes[index];
+                                return GestureDetector(
+                                  onLongPress: () {
+                                    _searchFocusNode.unfocus();
+                                    noteProvider.switchToNoteAt(note);
+                                    print(
+                                        'Note ${noteProvider.currentNote.title}, selected current: ${noteProvider.currentNote.isSelected}');
+                                    noteProvider.updateCurrentNoteIsSelected();
+                                    print(
+                                        'Note ${noteProvider.currentNote.title}, selected current: ${noteProvider.currentNote.isSelected}');
+                                    setState(() {});
+                                    showModalBottomSheet(
+                                      context: context,
+                                      backgroundColor: Colors.grey[850],
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(
+                                            top: Radius.circular(20)),
+                                      ),
+                                      builder: (context) => Container(
+                                        height: 120,
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 20.0, horizontal: 30.0),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () {
+                                                print(
+                                                    'Previous value: ${noteProvider.currentNote.isPinned}');
+                                                noteProvider
+                                                    .switchToNoteAt(note);
+                                                noteProvider
+                                                    .updateCurrentNoteIsPinned();
+                                                // setState(() {
+                                                //   _filteredNotes =
+                                                //       noteProvider.filterNotes(
+                                                //           noteProvider.notes);
+                                                // });
+                                                noteProvider
+                                                    .filterNotesByPinned();
+                                                setState(() {});
+                                                Navigator.pop(context);
+                                                print(
+                                                    'Current value: ${noteProvider.currentNote.isPinned}');
+                                              },
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.push_pin_outlined,
+                                                      color: Colors.white,
+                                                      size: 30),
+                                                  SizedBox(height: 5),
+                                                  Text('Pin',
+                                                      style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w900,
+                                                          fontSize: 20)),
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () {
-                                              Navigator.pop(context);
-                                              showModalBottomSheet(
-                                                context: context,
-                                                backgroundColor:
-                                                    Colors.grey[850],
-                                                shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.vertical(
-                                                            top:
-                                                                Radius.circular(
-                                                                    20))),
-                                                builder: (context) => Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      vertical: 25.0,
-                                                      horizontal: 30.0),
-                                                  child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Text(
-                                                        'Are you sure you want to delete "${noteProvider.currentNote.title}"?',
+                                            GestureDetector(
+                                              onTap: () {
+                                                Navigator.pop(context);
+                                                showModalBottomSheet(
+                                                  context: context,
+                                                  backgroundColor:
+                                                      Colors.grey[850],
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.vertical(
+                                                              top: Radius
+                                                                  .circular(
+                                                                      20))),
+                                                  builder: (context) =>
+                                                      Container(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        vertical: 25.0,
+                                                        horizontal: 30.0),
+                                                    child: Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Text(
+                                                          'Are you sure you want to delete "${noteProvider.currentNote.title}"?',
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontSize: 18,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w900),
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                        SizedBox(height: 20),
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceEvenly,
+                                                          children: [
+                                                            ElevatedButton(
+                                                              style: ElevatedButton
+                                                                  .styleFrom(
+                                                                      backgroundColor:
+                                                                          Colors
+                                                                              .red),
+                                                              onPressed: () {
+                                                                Navigator.pop(
+                                                                    context);
+                                                                noteProvider
+                                                                    .deleteNoteAt(
+                                                                        index);
+                                                                // setState(() {
+                                                                //   _filteredNotes =
+                                                                //       noteProvider.filterNotes(
+                                                                //           noteProvider
+                                                                //               .notes);
+                                                                // });
+
+                                                                print(
+                                                                    'Note deleted');
+                                                              },
+                                                              child: Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        8.0),
+                                                                child: Text(
+                                                                    'Yes',
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        fontWeight:
+                                                                            FontWeight
+                                                                                .w900,
+                                                                        fontSize:
+                                                                            17)),
+                                                              ),
+                                                            ),
+                                                            ElevatedButton(
+                                                              style: ElevatedButton.styleFrom(
+                                                                  backgroundColor:
+                                                                      Colors.grey[
+                                                                          700]),
+                                                              onPressed: () {
+                                                                Navigator.pop(
+                                                                    context); // Close the modal
+                                                                print(
+                                                                    'Deletion cancelled');
+                                                              },
+                                                              child: Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        8.0),
+                                                                child: Text(
+                                                                    'No',
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        fontWeight:
+                                                                            FontWeight
+                                                                                .w900,
+                                                                        fontSize:
+                                                                            17)),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.delete_outline,
+                                                      color: Colors.white,
+                                                      size: 30),
+                                                  SizedBox(height: 5),
+                                                  Text('Delete',
+                                                      style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w900,
+                                                          fontSize: 20)),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ).then((value) {
+                                      noteProvider.switchToNoteAt(note);
+                                      noteProvider
+                                          .updateCurrentNoteIsSelected();
+                                      setState(() {});
+                                    });
+                                  },
+                                  child: NotesGridContainer(note: note),
+                                  // Use the note directly, no changes to order
+                                  onTap: () {
+                                    _searchController
+                                        .clear(); // Clear the search text
+                                    _searchFocusNode
+                                        .unfocus(); // Remove focus from the search bar
+                                    noteProvider.switchToNoteAt(note);
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              NotePadScreen()),
+                                    );
+                                  },
+                                );
+                              },
+                            )
+                          : ListView.builder(
+                              controller: _scrollController,
+                              padding: EdgeInsets.all(0),
+                              itemCount: noteProvider.notes.length,
+                              itemBuilder: (context, index) {
+                                final note = noteProvider.notes[
+                                    index]; // Access note directly, no changes to order
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 15.0),
+                                  child: GestureDetector(
+                                    onLongPress: () {
+                                      _searchFocusNode.unfocus();
+                                      noteProvider.switchToNoteAt(note);
+                                      print(
+                                          'Note ${noteProvider.currentNote.title}, selected current: ${noteProvider.currentNote.isSelected}');
+                                      noteProvider
+                                          .updateCurrentNoteIsSelected();
+                                      print(
+                                          'Note ${noteProvider.currentNote.title}, selected current: ${noteProvider.currentNote.isSelected}');
+                                      setState(() {});
+                                      showModalBottomSheet(
+                                        context: context,
+                                        backgroundColor: Colors.grey[850],
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.vertical(
+                                              top: Radius.circular(20)),
+                                        ),
+                                        builder: (context) => Container(
+                                          height: 120,
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 20.0, horizontal: 30.0),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: [
+                                              GestureDetector(
+                                                onTap: () {
+                                                  print(
+                                                      'Previous value: ${noteProvider.currentNote.isPinned}');
+                                                  noteProvider
+                                                      .switchToNoteAt(note);
+                                                  noteProvider
+                                                      .updateCurrentNoteIsPinned();
+                                                  // setState(() {
+                                                  //   _filteredNotes =
+                                                  //       noteProvider.filterNotes(
+                                                  //           noteProvider.notes);
+                                                  // });
+                                                  noteProvider
+                                                      .filterNotesByPinned();
+                                                  setState(() {});
+                                                  Navigator.pop(context);
+                                                  print(
+                                                      'Current value: ${noteProvider.currentNote.isPinned}');
+                                                },
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                        Icons.push_pin_outlined,
+                                                        color: Colors.white,
+                                                        size: 30),
+                                                    SizedBox(height: 5),
+                                                    Text('Pin',
                                                         style: TextStyle(
                                                             color: Colors.white,
-                                                            fontSize: 18,
                                                             fontWeight:
-                                                                FontWeight
-                                                                    .w900),
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                      ),
-                                                      SizedBox(height: 20),
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceEvenly,
+                                                                FontWeight.w900,
+                                                            fontSize: 20)),
+                                                  ],
+                                                ),
+                                              ),
+                                              GestureDetector(
+                                                onTap: () {
+                                                  Navigator.pop(context);
+                                                  showModalBottomSheet(
+                                                    context: context,
+                                                    backgroundColor:
+                                                        Colors.grey[850],
+                                                    shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.vertical(
+                                                                top: Radius
+                                                                    .circular(
+                                                                        20))),
+                                                    builder: (context) =>
+                                                        Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          vertical: 25.0,
+                                                          horizontal: 30.0),
+                                                      child: Column(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
                                                         children: [
-                                                          ElevatedButton(
-                                                            style: ElevatedButton
-                                                                .styleFrom(
-                                                                    backgroundColor:
-                                                                        Colors
-                                                                            .red),
-                                                            onPressed: () {
-                                                              Navigator.pop(
-                                                                  context);
-                                                              noteProvider
-                                                                  .deleteNoteAt(
-                                                                      index);
-                                                              // setState(() {
-                                                              //   _filteredNotes =
-                                                              //       noteProvider.filterNotes(
-                                                              //           noteProvider
-                                                              //               .notes);
-                                                              // });
-
-                                                              print(
-                                                                  'Note deleted');
-                                                            },
-                                                            child: Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .all(8.0),
-                                                              child: Text('Yes',
-                                                                  style: TextStyle(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w900,
-                                                                      fontSize:
-                                                                          17)),
-                                                            ),
+                                                          Text(
+                                                            'Are you sure you want to delete "${noteProvider.currentNote.title}"?',
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 18,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w900),
+                                                            textAlign: TextAlign
+                                                                .center,
                                                           ),
-                                                          ElevatedButton(
-                                                            style: ElevatedButton
-                                                                .styleFrom(
+                                                          SizedBox(height: 20),
+                                                          Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceEvenly,
+                                                            children: [
+                                                              ElevatedButton(
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                        backgroundColor:
+                                                                            Colors.red),
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                  noteProvider
+                                                                      .deleteNoteAt(
+                                                                          index);
+                                                                  // setState(() {
+                                                                  //   _filteredNotes =
+                                                                  //       noteProvider.filterNotes(
+                                                                  //           noteProvider
+                                                                  //               .notes);
+                                                                  // });
+
+                                                                  print(
+                                                                      'Note deleted');
+                                                                },
+                                                                child: Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .all(
+                                                                          8.0),
+                                                                  child: Text(
+                                                                      'Yes',
+                                                                      style: TextStyle(
+                                                                          color: Colors
+                                                                              .white,
+                                                                          fontWeight: FontWeight
+                                                                              .w900,
+                                                                          fontSize:
+                                                                              17)),
+                                                                ),
+                                                              ),
+                                                              ElevatedButton(
+                                                                style: ElevatedButton.styleFrom(
                                                                     backgroundColor:
                                                                         Colors.grey[
                                                                             700]),
-                                                            onPressed: () {
-                                                              Navigator.pop(
-                                                                  context); // Close the modal
-                                                              print(
-                                                                  'Deletion cancelled');
-                                                            },
-                                                            child: Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .all(8.0),
-                                                              child: Text('No',
-                                                                  style: TextStyle(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      fontWeight:
-                                                                          FontWeight
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      context); // Close the modal
+                                                                  print(
+                                                                      'Deletion cancelled');
+                                                                },
+                                                                child: Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .all(
+                                                                          8.0),
+                                                                  child: Text(
+                                                                      'No',
+                                                                      style: TextStyle(
+                                                                          color: Colors
+                                                                              .white,
+                                                                          fontWeight: FontWeight
                                                                               .w900,
-                                                                      fontSize:
-                                                                          17)),
-                                                            ),
+                                                                          fontSize:
+                                                                              17)),
+                                                                ),
+                                                              ),
+                                                            ],
                                                           ),
                                                         ],
                                                       ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.delete_outline,
-                                                    color: Colors.white,
-                                                    size: 30),
-                                                SizedBox(height: 5),
-                                                Text('Delete',
-                                                    style: TextStyle(
+                                                    ),
+                                                  );
+                                                },
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(Icons.delete_outline,
                                                         color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.w900,
-                                                        fontSize: 20)),
-                                              ],
-                                            ),
+                                                        size: 30),
+                                                    SizedBox(height: 5),
+                                                    Text('Delete',
+                                                        style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontWeight:
+                                                                FontWeight.w900,
+                                                            fontSize: 20)),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                  ).then((value) {
-                                    noteProvider.switchToNoteAt(note);
-                                    noteProvider.updateCurrentNoteIsSelected();
-                                    setState(() {});
-                                  });
-                                },
-                                child: NotesContainer(note: note),
-                                // Use the note directly, no changes to order
-                                onTap: () {
-                                  _searchController
-                                      .clear(); // Clear the search text
-                                  _searchFocusNode
-                                      .unfocus(); // Remove focus from the search bar
-                                  noteProvider.switchToNoteAt(note);
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (context) => NotePadScreen()),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        )
+                                        ),
+                                      ).then((value) {
+                                        noteProvider.switchToNoteAt(note);
+                                        noteProvider
+                                            .updateCurrentNoteIsSelected();
+                                        setState(() {});
+                                      });
+                                    },
+                                    child: NotesContainer(note: note),
+                                    // Use the note directly, no changes to order
+                                    onTap: () {
+                                      _searchController
+                                          .clear(); // Clear the search text
+                                      _searchFocusNode
+                                          .unfocus(); // Remove focus from the search bar
+                                      noteProvider.switchToNoteAt(note);
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                NotePadScreen()),
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
+                            )
                       : Center(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 150.0),
@@ -377,228 +701,474 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         )
                   : _filteredNotes.isNotEmpty
-                      ? ListView.builder(
-                          controller: _scrollController,
-                          padding: EdgeInsets.all(0),
-                          itemCount: _filteredNotes.length,
-                          itemBuilder: (context, index) {
-                            final note = _filteredNotes[
-                                index]; // Access note directly, no changes to order
-
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 15.0),
-                              child: GestureDetector(
-                                onLongPress: () {
-                                  _searchFocusNode.unfocus();
-                                  noteProvider.switchToNoteAt(note);
-                                  print(
-                                      'Note ${noteProvider.currentNote.title}, selected current: ${noteProvider.currentNote.isSelected}');
-                                  noteProvider.updateCurrentNoteIsSelected();
-                                  print(
-                                      'Note ${noteProvider.currentNote.title}, selected current: ${noteProvider.currentNote.isSelected}');
-                                  setState(() {});
-                                  showModalBottomSheet(
-                                    context: context,
-                                    backgroundColor: Colors.grey[850],
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(20)),
-                                    ),
-                                    builder: (context) => Container(
-                                      height: 120,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 20.0, horizontal: 30.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceEvenly,
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () {
-                                              print(
-                                                  'Previous value: ${noteProvider.currentNote.isPinned}');
-                                              noteProvider.switchToNoteAt(note);
-                                              noteProvider
-                                                  .updateCurrentNoteIsPinned();
-                                              // setState(() {
-                                              //   _filteredNotes =
-                                              //       noteProvider.filterNotes(
-                                              //           noteProvider.notes);
-                                              // });
-                                              noteProvider
-                                                  .filterNotesByPinned();
-                                              setState(() {});
-                                              Navigator.pop(context);
-                                              print(
-                                                  'Current value: ${noteProvider.currentNote.isPinned}');
-                                            },
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.push_pin_outlined,
-                                                    color: Colors.white,
-                                                    size: 30),
-                                                SizedBox(height: 5),
-                                                Text('Pin',
-                                                    style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.w900,
-                                                        fontSize: 20)),
-                                              ],
+                      ? noteProvider.isGridView
+                          ? GridView.builder(
+                              controller: _scrollController,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount:
+                                    2, // Number of columns in the grid
+                                crossAxisSpacing:
+                                    10, // Horizontal space between grid items
+                                mainAxisSpacing:
+                                    10, // Vertical space between grid items
+                                childAspectRatio: 4.6 /
+                                    4, // Width to height ratio of each item
+                              ),
+                              padding: const EdgeInsets.all(0),
+                              itemCount: _filteredNotes.length,
+                              itemBuilder: (context, index) {
+                                final note = _filteredNotes[index];
+                                return GestureDetector(
+                                  onLongPress: () {
+                                    _searchFocusNode.unfocus();
+                                    noteProvider.switchToNoteAt(note);
+                                    print(
+                                        'Note ${noteProvider.currentNote.title}, selected current: ${noteProvider.currentNote.isSelected}');
+                                    noteProvider.updateCurrentNoteIsSelected();
+                                    print(
+                                        'Note ${noteProvider.currentNote.title}, selected current: ${noteProvider.currentNote.isSelected}');
+                                    setState(() {});
+                                    showModalBottomSheet(
+                                      context: context,
+                                      backgroundColor: Colors.grey[850],
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(
+                                            top: Radius.circular(20)),
+                                      ),
+                                      builder: (context) => Container(
+                                        height: 120,
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 20.0, horizontal: 30.0),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () {
+                                                print(
+                                                    'Previous value: ${noteProvider.currentNote.isPinned}');
+                                                noteProvider
+                                                    .switchToNoteAt(note);
+                                                noteProvider
+                                                    .updateCurrentNoteIsPinned();
+                                                // setState(() {
+                                                //   _filteredNotes =
+                                                //       noteProvider.filterNotes(
+                                                //           noteProvider.notes);
+                                                // });
+                                                noteProvider
+                                                    .filterNotesByPinned();
+                                                setState(() {});
+                                                Navigator.pop(context);
+                                                print(
+                                                    'Current value: ${noteProvider.currentNote.isPinned}');
+                                              },
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.push_pin_outlined,
+                                                      color: Colors.white,
+                                                      size: 30),
+                                                  SizedBox(height: 5),
+                                                  Text('Pin',
+                                                      style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w900,
+                                                          fontSize: 20)),
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () {
-                                              Navigator.pop(context);
-                                              showModalBottomSheet(
-                                                context: context,
-                                                backgroundColor:
-                                                    Colors.grey[850],
-                                                shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.vertical(
-                                                            top:
-                                                                Radius.circular(
-                                                                    20))),
-                                                builder: (context) => Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      vertical: 25.0,
-                                                      horizontal: 30.0),
-                                                  child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Text(
-                                                        'Are you sure you want to delete "${noteProvider.currentNote.title}"?',
+                                            GestureDetector(
+                                              onTap: () {
+                                                Navigator.pop(context);
+                                                showModalBottomSheet(
+                                                  context: context,
+                                                  backgroundColor:
+                                                      Colors.grey[850],
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.vertical(
+                                                              top: Radius
+                                                                  .circular(
+                                                                      20))),
+                                                  builder: (context) =>
+                                                      Container(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        vertical: 25.0,
+                                                        horizontal: 30.0),
+                                                    child: Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Text(
+                                                          'Are you sure you want to delete "${noteProvider.currentNote.title}"?',
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontSize: 18,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w900),
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                        ),
+                                                        SizedBox(height: 20),
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceEvenly,
+                                                          children: [
+                                                            ElevatedButton(
+                                                              style: ElevatedButton
+                                                                  .styleFrom(
+                                                                      backgroundColor:
+                                                                          Colors
+                                                                              .red),
+                                                              onPressed: () {
+                                                                Navigator.pop(
+                                                                    context);
+                                                                noteProvider
+                                                                    .deleteNoteAt(
+                                                                        index);
+                                                                // setState(() {
+                                                                //   _filteredNotes =
+                                                                //       noteProvider.filterNotes(
+                                                                //           noteProvider
+                                                                //               .notes);
+                                                                // });
+
+                                                                print(
+                                                                    'Note deleted');
+                                                              },
+                                                              child: Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        8.0),
+                                                                child: Text(
+                                                                    'Yes',
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        fontWeight:
+                                                                            FontWeight
+                                                                                .w900,
+                                                                        fontSize:
+                                                                            17)),
+                                                              ),
+                                                            ),
+                                                            ElevatedButton(
+                                                              style: ElevatedButton.styleFrom(
+                                                                  backgroundColor:
+                                                                      Colors.grey[
+                                                                          700]),
+                                                              onPressed: () {
+                                                                Navigator.pop(
+                                                                    context); // Close the modal
+                                                                print(
+                                                                    'Deletion cancelled');
+                                                              },
+                                                              child: Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        8.0),
+                                                                child: Text(
+                                                                    'No',
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        fontWeight:
+                                                                            FontWeight
+                                                                                .w900,
+                                                                        fontSize:
+                                                                            17)),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.delete_outline,
+                                                      color: Colors.white,
+                                                      size: 30),
+                                                  SizedBox(height: 5),
+                                                  Text('Delete',
+                                                      style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w900,
+                                                          fontSize: 20)),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ).then((value) {
+                                      noteProvider.switchToNoteAt(note);
+                                      noteProvider
+                                          .updateCurrentNoteIsSelected();
+                                      setState(() {});
+                                    });
+                                  },
+                                  child: NotesGridContainer(note: note),
+                                  // Use the note directly, no changes to order
+                                  onTap: () {
+                                    _searchController
+                                        .clear(); // Clear the search text
+                                    _searchFocusNode
+                                        .unfocus(); // Remove focus from the search bar
+                                    noteProvider.switchToNoteAt(note);
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              NotePadScreen()),
+                                    );
+                                  },
+                                );
+                              },
+                            )
+                          : ListView.builder(
+                              controller: _scrollController,
+                              padding: EdgeInsets.all(0),
+                              itemCount: _filteredNotes.length,
+                              itemBuilder: (context, index) {
+                                final note = _filteredNotes[
+                                    index]; // Access note directly, no changes to order
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 15.0),
+                                  child: GestureDetector(
+                                    onLongPress: () {
+                                      _searchFocusNode.unfocus();
+                                      noteProvider.switchToNoteAt(note);
+                                      print(
+                                          'Note ${noteProvider.currentNote.title}, selected current: ${noteProvider.currentNote.isSelected}');
+                                      noteProvider
+                                          .updateCurrentNoteIsSelected();
+                                      print(
+                                          'Note ${noteProvider.currentNote.title}, selected current: ${noteProvider.currentNote.isSelected}');
+                                      setState(() {});
+                                      showModalBottomSheet(
+                                        context: context,
+                                        backgroundColor: Colors.grey[850],
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.vertical(
+                                              top: Radius.circular(20)),
+                                        ),
+                                        builder: (context) => Container(
+                                          height: 120,
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 20.0, horizontal: 30.0),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: [
+                                              GestureDetector(
+                                                onTap: () {
+                                                  print(
+                                                      'Previous value: ${noteProvider.currentNote.isPinned}');
+                                                  noteProvider
+                                                      .switchToNoteAt(note);
+                                                  noteProvider
+                                                      .updateCurrentNoteIsPinned();
+                                                  // setState(() {
+                                                  //   _filteredNotes =
+                                                  //       noteProvider.filterNotes(
+                                                  //           noteProvider.notes);
+                                                  // });
+                                                  noteProvider
+                                                      .filterNotesByPinned();
+                                                  setState(() {});
+                                                  Navigator.pop(context);
+                                                  print(
+                                                      'Current value: ${noteProvider.currentNote.isPinned}');
+                                                },
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                        Icons.push_pin_outlined,
+                                                        color: Colors.white,
+                                                        size: 30),
+                                                    SizedBox(height: 5),
+                                                    Text('Pin',
                                                         style: TextStyle(
                                                             color: Colors.white,
-                                                            fontSize: 18,
                                                             fontWeight:
-                                                                FontWeight
-                                                                    .w900),
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                      ),
-                                                      SizedBox(height: 20),
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceEvenly,
+                                                                FontWeight.w900,
+                                                            fontSize: 20)),
+                                                  ],
+                                                ),
+                                              ),
+                                              GestureDetector(
+                                                onTap: () {
+                                                  Navigator.pop(context);
+                                                  showModalBottomSheet(
+                                                    context: context,
+                                                    backgroundColor:
+                                                        Colors.grey[850],
+                                                    shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.vertical(
+                                                                top: Radius
+                                                                    .circular(
+                                                                        20))),
+                                                    builder: (context) =>
+                                                        Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          vertical: 25.0,
+                                                          horizontal: 30.0),
+                                                      child: Column(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
                                                         children: [
-                                                          ElevatedButton(
-                                                            style: ElevatedButton
-                                                                .styleFrom(
-                                                                    backgroundColor:
-                                                                        Colors
-                                                                            .red),
-                                                            onPressed: () {
-                                                              Navigator.pop(
-                                                                  context);
-                                                              noteProvider
-                                                                  .deleteNoteAt(
-                                                                      index);
-                                                              // setState(() {
-                                                              //   _filteredNotes =
-                                                              //       noteProvider.filterNotes(
-                                                              //           noteProvider
-                                                              //               .notes);
-                                                              // });
-
-                                                              print(
-                                                                  'Note deleted');
-                                                            },
-                                                            child: Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .all(8.0),
-                                                              child: Text('Yes',
-                                                                  style: TextStyle(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w900,
-                                                                      fontSize:
-                                                                          17)),
-                                                            ),
+                                                          Text(
+                                                            'Are you sure you want to delete "${noteProvider.currentNote.title}"?',
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 18,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w900),
+                                                            textAlign: TextAlign
+                                                                .center,
                                                           ),
-                                                          ElevatedButton(
-                                                            style: ElevatedButton
-                                                                .styleFrom(
+                                                          SizedBox(height: 20),
+                                                          Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceEvenly,
+                                                            children: [
+                                                              ElevatedButton(
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                        backgroundColor:
+                                                                            Colors.red),
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                  noteProvider
+                                                                      .deleteNoteAt(
+                                                                          index);
+                                                                  // setState(() {
+                                                                  //   _filteredNotes =
+                                                                  //       noteProvider.filterNotes(
+                                                                  //           noteProvider
+                                                                  //               .notes);
+                                                                  // });
+
+                                                                  print(
+                                                                      'Note deleted');
+                                                                },
+                                                                child: Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .all(
+                                                                          8.0),
+                                                                  child: Text(
+                                                                      'Yes',
+                                                                      style: TextStyle(
+                                                                          color: Colors
+                                                                              .white,
+                                                                          fontWeight: FontWeight
+                                                                              .w900,
+                                                                          fontSize:
+                                                                              17)),
+                                                                ),
+                                                              ),
+                                                              ElevatedButton(
+                                                                style: ElevatedButton.styleFrom(
                                                                     backgroundColor:
                                                                         Colors.grey[
                                                                             700]),
-                                                            onPressed: () {
-                                                              Navigator.pop(
-                                                                  context); // Close the modal
-                                                              print(
-                                                                  'Deletion cancelled');
-                                                            },
-                                                            child: Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .all(8.0),
-                                                              child: Text('No',
-                                                                  style: TextStyle(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      fontWeight:
-                                                                          FontWeight
+                                                                onPressed: () {
+                                                                  Navigator.pop(
+                                                                      context); // Close the modal
+                                                                  print(
+                                                                      'Deletion cancelled');
+                                                                },
+                                                                child: Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .all(
+                                                                          8.0),
+                                                                  child: Text(
+                                                                      'No',
+                                                                      style: TextStyle(
+                                                                          color: Colors
+                                                                              .white,
+                                                                          fontWeight: FontWeight
                                                                               .w900,
-                                                                      fontSize:
-                                                                          17)),
-                                                            ),
+                                                                          fontSize:
+                                                                              17)),
+                                                                ),
+                                                              ),
+                                                            ],
                                                           ),
                                                         ],
                                                       ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.delete_outline,
-                                                    color: Colors.white,
-                                                    size: 30),
-                                                SizedBox(height: 5),
-                                                Text('Delete',
-                                                    style: TextStyle(
+                                                    ),
+                                                  );
+                                                },
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(Icons.delete_outline,
                                                         color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.w900,
-                                                        fontSize: 20)),
-                                              ],
-                                            ),
+                                                        size: 30),
+                                                    SizedBox(height: 5),
+                                                    Text('Delete',
+                                                        style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontWeight:
+                                                                FontWeight.w900,
+                                                            fontSize: 20)),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                  ).then((value) {
-                                    noteProvider.switchToNoteAt(note);
-                                    noteProvider.updateCurrentNoteIsSelected();
-                                    setState(() {});
-                                  });
-                                },
-                                child: NotesContainer(note: note),
-                                // Use the note directly, no changes to order
-                                onTap: () {
-                                  _searchController
-                                      .clear(); // Clear the search text
-                                  _searchFocusNode
-                                      .unfocus(); // Remove focus from the search bar
-                                  noteProvider.switchToNoteAt(note);
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (context) => NotePadScreen()),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        )
+                                        ),
+                                      ).then((value) {
+                                        noteProvider.switchToNoteAt(note);
+                                        noteProvider
+                                            .updateCurrentNoteIsSelected();
+                                        setState(() {});
+                                      });
+                                    },
+                                    child: NotesContainer(note: note),
+                                    // Use the note directly, no changes to order
+                                    onTap: () {
+                                      _searchController
+                                          .clear(); // Clear the search text
+                                      _searchFocusNode
+                                          .unfocus(); // Remove focus from the search bar
+                                      noteProvider.switchToNoteAt(note);
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                NotePadScreen()),
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
+                            )
                       : Center(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 150.0),
@@ -628,6 +1198,8 @@ class _HomeScreenState extends State<HomeScreen> {
             // setState(() {
             //   _filteredNotes = noteProvider.filterNotes(noteProvider.notes);
             // });
+            noteProvider.filterNotesByPinned();
+            setState(() {});
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => NotePadScreen(),
