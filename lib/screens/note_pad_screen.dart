@@ -252,249 +252,268 @@ class _NotePadScreenState extends State<NotePadScreen> {
   Widget build(BuildContext context) {
     final noteProvider = Provider.of<NoteProvider>(context, listen: false);
     print(noteProvider.currentNote.date);
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        surfaceTintColor: Theme.of(context).colorScheme.surface,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          return;
+        }
+        final navigator = Navigator.of(context);
+        _saveChanges();
+
+        navigator.pop(result);
+      },
+      child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        leading: GestureDetector(
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const HomeScreen(),
-              ),
-            );
-          },
-          child: Icon(
-            Icons.arrow_back,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : Colors.black,
-            size: 28,
+        appBar: AppBar(
+          surfaceTintColor: Theme.of(context).colorScheme.surface,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          leading: GestureDetector(
+            onTap: () {
+              _saveChanges();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const HomeScreen(),
+                ),
+              );
+            },
+            child: Icon(
+              Icons.arrow_back,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black,
+              size: 28,
+            ),
           ),
+          actions: <Widget>[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.undo,
+                        color: _historyIndex > 0
+                            ? Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black
+                            : Colors.grey[300],
+                        size: 28),
+                    onPressed: _historyIndex > 0 ? _undo : null,
+                  ),
+                  SizedBox(width: 20),
+                  IconButton(
+                    icon: Icon(Icons.redo,
+                        color: _historyIndex < _contentHistory.length - 1
+                            ? Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black
+                            : Colors.grey[300],
+                        size: 28),
+                    onPressed: _historyIndex < _contentHistory.length - 1
+                        ? _redo
+                        : null,
+                  ),
+                  SizedBox(width: 20),
+                  IconButton(
+                    icon: Icon(Icons.check,
+                        color: _isSaved
+                            ? Colors.grey[300]
+                            : Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
+                        size: 28),
+                    onPressed: _isSaved ? null : _saveChanges,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        actions: <Widget>[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.undo,
-                      color: _historyIndex > 0
-                          ? Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black
-                          : Colors.grey[300],
-                      size: 28),
-                  onPressed: _historyIndex > 0 ? _undo : null,
-                ),
-                SizedBox(width: 20),
-                IconButton(
-                  icon: Icon(Icons.redo,
-                      color: _historyIndex < _contentHistory.length - 1
-                          ? Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black
-                          : Colors.grey[300],
-                      size: 28),
-                  onPressed:
-                      _historyIndex < _contentHistory.length - 1 ? _redo : null,
-                ),
-                SizedBox(width: 20),
-                IconButton(
-                  icon: Icon(Icons.check,
-                      color: _isSaved
-                          ? Colors.grey[300]
-                          : Theme.of(context).brightness == Brightness.dark
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(
+                    left: 20.0, right: 20, bottom: 200, top: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: _titleController,
+                      cursorColor:
+                          Theme.of(context).brightness == Brightness.dark
                               ? Colors.white
                               : Colors.black,
-                      size: 28),
-                  onPressed: _isSaved ? null : _saveChanges,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(
-                  left: 20.0, right: 20, bottom: 200, top: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: _titleController,
-                    cursorColor: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.black,
-                    decoration: InputDecoration(
-                      hintText: 'Title',
-                      hintStyle: TextStyle(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey.withOpacity(0.4)
-                              : Colors.grey[400]),
-                      border: InputBorder.none,
-                    ),
-                    style: TextStyle(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white
-                          : Colors.black,
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  SizedBox(height: 15),
-                  Text(
-                    '${_contentController.text.length} Character${_contentController.text.length < 2 ? '' : 's'}  |  ${reformatDate(noteProvider.currentNote.date)}',
-                    style: TextStyle(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey
-                          : Colors.grey[600],
-                    ),
-                  ),
-                  SizedBox(height: 25),
-                  TextField(
-                    controller: _contentController,
-                    maxLines: null,
-                    cursorColor: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.black,
-                    decoration: InputDecoration(
-                      hintText: 'Start Typing',
-                      hintStyle: TextStyle(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey.withOpacity(0.4)
-                              : Colors.grey[400]),
-                      border: InputBorder.none,
-                    ),
-                    style: _currentStyle.copyWith(
+                      decoration: InputDecoration(
+                        hintText: 'Title',
+                        hintStyle: TextStyle(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.grey.withOpacity(0.4)
+                                    : Colors.grey[400]),
+                        border: InputBorder.none,
+                      ),
+                      style: TextStyle(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.white
-                            : Colors.black),
-                    textAlign: _textAlign,
-                    onChanged: (value) {
-                      // Only save to history if the content has changed
-                      setState(() {
-                        _isSaved = false;
-                        if (_contentHistory.isEmpty ||
-                            _contentHistory.last != value) {
-                          _saveContentToHistory(); // Save history on text change
-                        }
-                      });
-                    },
-                  ),
-                ],
+                            : Colors.black,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 15),
+                    Text(
+                      '${_contentController.text.length} Character${_contentController.text.length < 2 ? '' : 's'}  |  ${reformatDate(noteProvider.currentNote.date)}',
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey
+                            : Colors.grey[600],
+                      ),
+                    ),
+                    SizedBox(height: 25),
+                    TextField(
+                      controller: _contentController,
+                      maxLines: null,
+                      cursorColor:
+                          Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black,
+                      decoration: InputDecoration(
+                        hintText: 'Start Typing',
+                        hintStyle: TextStyle(
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.grey.withOpacity(0.4)
+                                    : Colors.grey[400]),
+                        border: InputBorder.none,
+                      ),
+                      style: _currentStyle.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black),
+                      textAlign: _textAlign,
+                      onChanged: (value) {
+                        // Only save to history if the content has changed
+                        setState(() {
+                          _isSaved = false;
+                          if (_contentHistory.isEmpty ||
+                              _contentHistory.last != value) {
+                            _saveContentToHistory(); // Save history on text change
+                          }
+                        });
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Container(
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                  border: Theme.of(context).brightness == Brightness.dark
-                      ? null
-                      : Border(top: BorderSide(color: Colors.black, width: 2))),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  IconButton(
-                    icon: Icon(Icons.text_increase,
-                        size: 30,
-                        color: _fontSize > 1
-                            ? Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black
-                            : Colors.grey[400]),
-                    onPressed: _increaseFontSize,
-                  ),
-                  SizedBox(width: 15),
-                  IconButton(
-                    icon: Icon(Icons.text_decrease,
-                        size: 30,
-                        color: _fontSize > 10
-                            ? Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black
-                            : Colors.grey[400]),
-                    onPressed: _decreaseFontSize,
-                  ),
-                  SizedBox(width: 15),
-                  IconButton(
-                    icon: Icon(Icons.format_bold,
-                        size: 30,
-                        color: _isBold
-                            ? Color(0xffB17457)
-                            : Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black),
-                    onPressed: _toggleBold,
-                  ),
-                  SizedBox(width: 15),
-                  IconButton(
-                    icon: Icon(Icons.format_underline,
-                        size: 30,
-                        color: _isUnderline
-                            ? Color(0xffB17457)
-                            : Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black),
-                    onPressed: _toggleUnderline,
-                  ),
-                  SizedBox(width: 15),
-                  IconButton(
-                    icon: Icon(Icons.format_italic,
-                        size: 30,
-                        color: _isItalic
-                            ? Color(0xffB17457)
-                            : Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black),
-                    onPressed: _toggleItalic,
-                  ),
-                  SizedBox(width: 15),
-                  IconButton(
-                    icon: Icon(Icons.format_align_left,
-                        size: 30,
-                        color: _textAlign == TextAlign.left
-                            ? Color(0xffB17457)
-                            : Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black),
-                    onPressed: () => _setTextAlign(TextAlign.left),
-                  ),
-                  SizedBox(width: 15),
-                  IconButton(
-                    icon: Icon(Icons.format_align_center,
-                        size: 30,
-                        color: _textAlign == TextAlign.center
-                            ? Color(0xffB17457)
-                            : Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black),
-                    onPressed: () => _setTextAlign(TextAlign.center),
-                  ),
-                  SizedBox(width: 15),
-                  IconButton(
-                    icon: Icon(Icons.format_align_right,
-                        size: 30,
-                        color: _textAlign == TextAlign.right
-                            ? Color(0xffB17457)
-                            : Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white
-                                : Colors.black),
-                    onPressed: () => _setTextAlign(TextAlign.right),
-                  ),
-                ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                    border: Theme.of(context).brightness == Brightness.dark
+                        ? null
+                        : Border(
+                            top: BorderSide(color: Colors.black, width: 2))),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    IconButton(
+                      icon: Icon(Icons.text_increase,
+                          size: 30,
+                          color: _fontSize > 1
+                              ? Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black
+                              : Colors.grey[400]),
+                      onPressed: _increaseFontSize,
+                    ),
+                    SizedBox(width: 15),
+                    IconButton(
+                      icon: Icon(Icons.text_decrease,
+                          size: 30,
+                          color: _fontSize > 10
+                              ? Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black
+                              : Colors.grey[400]),
+                      onPressed: _decreaseFontSize,
+                    ),
+                    SizedBox(width: 15),
+                    IconButton(
+                      icon: Icon(Icons.format_bold,
+                          size: 30,
+                          color: _isBold
+                              ? Color(0xffB17457)
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black),
+                      onPressed: _toggleBold,
+                    ),
+                    SizedBox(width: 15),
+                    IconButton(
+                      icon: Icon(Icons.format_underline,
+                          size: 30,
+                          color: _isUnderline
+                              ? Color(0xffB17457)
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black),
+                      onPressed: _toggleUnderline,
+                    ),
+                    SizedBox(width: 15),
+                    IconButton(
+                      icon: Icon(Icons.format_italic,
+                          size: 30,
+                          color: _isItalic
+                              ? Color(0xffB17457)
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black),
+                      onPressed: _toggleItalic,
+                    ),
+                    SizedBox(width: 15),
+                    IconButton(
+                      icon: Icon(Icons.format_align_left,
+                          size: 30,
+                          color: _textAlign == TextAlign.left
+                              ? Color(0xffB17457)
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black),
+                      onPressed: () => _setTextAlign(TextAlign.left),
+                    ),
+                    SizedBox(width: 15),
+                    IconButton(
+                      icon: Icon(Icons.format_align_center,
+                          size: 30,
+                          color: _textAlign == TextAlign.center
+                              ? Color(0xffB17457)
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black),
+                      onPressed: () => _setTextAlign(TextAlign.center),
+                    ),
+                    SizedBox(width: 15),
+                    IconButton(
+                      icon: Icon(Icons.format_align_right,
+                          size: 30,
+                          color: _textAlign == TextAlign.right
+                              ? Color(0xffB17457)
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black),
+                      onPressed: () => _setTextAlign(TextAlign.right),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

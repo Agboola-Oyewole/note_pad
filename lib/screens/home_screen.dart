@@ -1194,7 +1194,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               )
                         : Center(
                             child: Padding(
-                              padding: const EdgeInsets.only(bottom: 150.0),
+                              padding: const EdgeInsets.only(bottom: 70.0),
                               child: Text(
                                 'No Results',
                                 style: TextStyle(
