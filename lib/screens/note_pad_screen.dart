@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:note_pad/screens/home_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -31,8 +32,6 @@ class _NotePadScreenState extends State<NotePadScreen> {
         TextEditingController(text: noteProvider.currentNote.title);
     _contentController =
         TextEditingController(text: noteProvider.currentNote.content);
-    print('Created int: ${noteProvider.currentNote.createInt}');
-    print('IspINNED int: ${noteProvider.currentNote.isPinned}');
     setState(() {
       // Set font size from current note's textStyle
       _fontSize = noteProvider.currentNote.textStyle.fontSize ?? 18;
@@ -213,9 +212,43 @@ class _NotePadScreenState extends State<NotePadScreen> {
     });
   }
 
+  String addOrdinalSuffix(int day) {
+    if (day >= 11 && day <= 13) {
+      return "$day" + "th";
+    }
+    switch (day % 10) {
+      case 1:
+        return "$day" + "st";
+      case 2:
+        return "$day" + "nd";
+      case 3:
+        return "$day" + "rd";
+      default:
+        return "$day" + "th";
+    }
+  }
+
+  String reformatDate(String dateString) {
+    // Step 1: Remove ordinal suffixes from the day (e.g., "12th" -> "12")
+    dateString = dateString.replaceAll(RegExp(r'(st|nd|rd|th)'), '');
+
+    // Step 2: Parse the date with seconds
+    DateTime parsedDate = DateFormat("d MMMM yyyy h:mm:ss a").parse(dateString);
+
+    // Step 3: Reformat the parsed date into the desired format without the seconds
+    String formattedDate = DateFormat("d MMMM h:mm a").format(parsedDate);
+
+    // Step 4: Add the ordinal suffix back to the day
+    String dayWithSuffix = addOrdinalSuffix(parsedDate.day);
+
+    // Final format: "11th November 12:34 PM"
+    return formattedDate.replaceFirst(parsedDate.day.toString(), dayWithSuffix);
+  }
+
   @override
   Widget build(BuildContext context) {
     final noteProvider = Provider.of<NoteProvider>(context, listen: false);
+    print(noteProvider.currentNote.date);
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
@@ -225,7 +258,7 @@ class _NotePadScreenState extends State<NotePadScreen> {
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => HomeScreen(),
+                builder: (context) => const HomeScreen(),
               ),
             );
           },
@@ -281,191 +314,184 @@ class _NotePadScreenState extends State<NotePadScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(
-                    left: 20.0, right: 20, bottom: 200, top: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: _titleController,
-                      cursorColor:
-                          Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black,
-                      decoration: InputDecoration(
-                        hintText: 'Title',
-                        hintStyle: TextStyle(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.grey.withOpacity(0.4)
-                                    : Colors.grey[400]),
-                        border: InputBorder.none,
-                      ),
-                      style: TextStyle(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(
+                  left: 20.0, right: 20, bottom: 200, top: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _titleController,
+                    cursorColor: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black,
+                    decoration: InputDecoration(
+                      hintText: 'Title',
+                      hintStyle: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey.withOpacity(0.4)
+                              : Colors.grey[400]),
+                      border: InputBorder.none,
+                    ),
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  SizedBox(height: 15),
+                  Text(
+                    '${_contentController.text.length} Character${_contentController.text.length < 2 ? '' : 's'}  |  ${reformatDate(noteProvider.currentNote.date)}',
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey
+                          : Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 25),
+                  TextField(
+                    controller: _contentController,
+                    maxLines: null,
+                    cursorColor: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black,
+                    decoration: InputDecoration(
+                      hintText: 'Start Typing',
+                      hintStyle: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey.withOpacity(0.4)
+                              : Colors.grey[400]),
+                      border: InputBorder.none,
+                    ),
+                    style: _currentStyle.copyWith(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.white
-                            : Colors.black,
-                        fontSize: 30,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    SizedBox(height: 15),
-                    Text(
-                      '${_contentController.text.length} Character${_contentController.text.length < 2 ? '' : 's'}  |  ${noteProvider.currentNote.date}',
-                      style: TextStyle(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.grey
-                            : Colors.grey[600],
-                      ),
-                    ),
-                    SizedBox(height: 25),
-                    TextField(
-                      controller: _contentController,
-                      maxLines: null,
-                      cursorColor:
-                          Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black,
-                      decoration: InputDecoration(
-                        hintText: 'Start Typing',
-                        hintStyle: TextStyle(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.grey.withOpacity(0.4)
-                                    : Colors.grey[400]),
-                        border: InputBorder.none,
-                      ),
-                      style: _currentStyle.copyWith(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black),
-                      textAlign: _textAlign,
-                      onChanged: (value) {
-                        // Only save to history if the content has changed
-                        setState(() {
-                          _isSaved = false;
-                          if (_contentHistory.isEmpty ||
-                              _contentHistory.last != value) {
-                            _saveContentToHistory(); // Save history on text change
-                          }
-                        });
-                      },
-                    ),
-                  ],
-                ),
+                            : Colors.black),
+                    textAlign: _textAlign,
+                    onChanged: (value) {
+                      // Only save to history if the content has changed
+                      setState(() {
+                        _isSaved = false;
+                        if (_contentHistory.isEmpty ||
+                            _contentHistory.last != value) {
+                          _saveContentToHistory(); // Save history on text change
+                        }
+                      });
+                    },
+                  ),
+                ],
               ),
             ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                    border: Theme.of(context).brightness == Brightness.dark
-                        ? null
-                        : Border(
-                            top: BorderSide(color: Colors.black, width: 2))),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    IconButton(
-                      icon: Icon(Icons.text_increase,
-                          size: 30,
-                          color: _fontSize > 1
-                              ? Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black
-                              : Colors.grey[400]),
-                      onPressed: _increaseFontSize,
-                    ),
-                    SizedBox(width: 15),
-                    IconButton(
-                      icon: Icon(Icons.text_decrease,
-                          size: 30,
-                          color: _fontSize > 10
-                              ? Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black
-                              : Colors.grey[400]),
-                      onPressed: _decreaseFontSize,
-                    ),
-                    SizedBox(width: 15),
-                    IconButton(
-                      icon: Icon(Icons.format_bold,
-                          size: 30,
-                          color: _isBold
-                              ? Color(0xffB17457)
-                              : Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black),
-                      onPressed: _toggleBold,
-                    ),
-                    SizedBox(width: 15),
-                    IconButton(
-                      icon: Icon(Icons.format_underline,
-                          size: 30,
-                          color: _isUnderline
-                              ? Color(0xffB17457)
-                              : Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black),
-                      onPressed: _toggleUnderline,
-                    ),
-                    SizedBox(width: 15),
-                    IconButton(
-                      icon: Icon(Icons.format_italic,
-                          size: 30,
-                          color: _isItalic
-                              ? Color(0xffB17457)
-                              : Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black),
-                      onPressed: _toggleItalic,
-                    ),
-                    SizedBox(width: 15),
-                    IconButton(
-                      icon: Icon(Icons.format_align_left,
-                          size: 30,
-                          color: _textAlign == TextAlign.left
-                              ? Color(0xffB17457)
-                              : Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black),
-                      onPressed: () => _setTextAlign(TextAlign.left),
-                    ),
-                    SizedBox(width: 15),
-                    IconButton(
-                      icon: Icon(Icons.format_align_center,
-                          size: 30,
-                          color: _textAlign == TextAlign.center
-                              ? Color(0xffB17457)
-                              : Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black),
-                      onPressed: () => _setTextAlign(TextAlign.center),
-                    ),
-                    SizedBox(width: 15),
-                    IconButton(
-                      icon: Icon(Icons.format_align_right,
-                          size: 30,
-                          color: _textAlign == TextAlign.right
-                              ? Color(0xffB17457)
-                              : Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black),
-                      onPressed: () => _setTextAlign(TextAlign.right),
-                    ),
-                  ],
-                ),
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Container(
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                  border: Theme.of(context).brightness == Brightness.dark
+                      ? null
+                      : Border(top: BorderSide(color: Colors.black, width: 2))),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  IconButton(
+                    icon: Icon(Icons.text_increase,
+                        size: 30,
+                        color: _fontSize > 1
+                            ? Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black
+                            : Colors.grey[400]),
+                    onPressed: _increaseFontSize,
+                  ),
+                  SizedBox(width: 15),
+                  IconButton(
+                    icon: Icon(Icons.text_decrease,
+                        size: 30,
+                        color: _fontSize > 10
+                            ? Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black
+                            : Colors.grey[400]),
+                    onPressed: _decreaseFontSize,
+                  ),
+                  SizedBox(width: 15),
+                  IconButton(
+                    icon: Icon(Icons.format_bold,
+                        size: 30,
+                        color: _isBold
+                            ? Color(0xffB17457)
+                            : Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black),
+                    onPressed: _toggleBold,
+                  ),
+                  SizedBox(width: 15),
+                  IconButton(
+                    icon: Icon(Icons.format_underline,
+                        size: 30,
+                        color: _isUnderline
+                            ? Color(0xffB17457)
+                            : Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black),
+                    onPressed: _toggleUnderline,
+                  ),
+                  SizedBox(width: 15),
+                  IconButton(
+                    icon: Icon(Icons.format_italic,
+                        size: 30,
+                        color: _isItalic
+                            ? Color(0xffB17457)
+                            : Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black),
+                    onPressed: _toggleItalic,
+                  ),
+                  SizedBox(width: 15),
+                  IconButton(
+                    icon: Icon(Icons.format_align_left,
+                        size: 30,
+                        color: _textAlign == TextAlign.left
+                            ? Color(0xffB17457)
+                            : Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black),
+                    onPressed: () => _setTextAlign(TextAlign.left),
+                  ),
+                  SizedBox(width: 15),
+                  IconButton(
+                    icon: Icon(Icons.format_align_center,
+                        size: 30,
+                        color: _textAlign == TextAlign.center
+                            ? Color(0xffB17457)
+                            : Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black),
+                    onPressed: () => _setTextAlign(TextAlign.center),
+                  ),
+                  SizedBox(width: 15),
+                  IconButton(
+                    icon: Icon(Icons.format_align_right,
+                        size: 30,
+                        color: _textAlign == TextAlign.right
+                            ? Color(0xffB17457)
+                            : Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black),
+                    onPressed: () => _setTextAlign(TextAlign.right),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

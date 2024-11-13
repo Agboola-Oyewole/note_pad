@@ -7,10 +7,6 @@ class Note {
   bool isPinned;
   bool isSelected;
   String date;
-  int createInt;
-
-  // Static field to track the latest createInt value
-  static int currentCreateInt = 1000;
 
   Note({
     required this.title,
@@ -19,8 +15,7 @@ class Note {
     required this.date,
     required this.isPinned,
     required this.isSelected,
-    int? createInt,
-  }) : createInt = createInt ?? currentCreateInt--;
+  });
 
   Map<String, dynamic> toJson() {
     return {
@@ -33,7 +28,6 @@ class Note {
       },
       'isPinned': isPinned,
       'isSelected': isSelected,
-      'createInt': createInt,
       'date': date,
     };
   }
@@ -48,8 +42,6 @@ class Note {
         fontStyle: FontStyle.values[json['textStyle']['fontStyle'] ?? 0],
       ),
       isPinned: json['isPinned'] ?? false,
-      createInt: json['createInt'],
-      // Use createInt from JSON if available
       isSelected: false,
       date: json['date'],
     );
@@ -59,13 +51,10 @@ class Note {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is Note &&
-        other.title == title &&
-        other.content == content &&
-        other.createInt == createInt;
+    return other is Note && other.title == title && other.content == content;
   }
 
   // Override hashCode
   @override
-  int get hashCode => title.hashCode ^ content.hashCode ^ createInt.hashCode;
+  int get hashCode => title.hashCode ^ content.hashCode;
 }

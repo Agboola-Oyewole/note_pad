@@ -41,7 +41,7 @@ void main() {
           brightness: Brightness.dark,
           fontFamily: 'Poppins',
         ),
-        themeMode: ThemeMode.light,
+        themeMode: ThemeMode.system,
       ),
     ),
   );
