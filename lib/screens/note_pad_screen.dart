@@ -98,7 +98,7 @@ class _NotePadScreenState extends State<NotePadScreen> {
   }
 
   // Method to format the date as "4th September 2024 12:23 AM"
-  String _formatDate(DateTime dateTime) {
+  static String _formatDate(DateTime dateTime) {
     final int day = dateTime.day;
     final String suffix = _getSuffix(day);
     final String formattedDate =
@@ -106,7 +106,7 @@ class _NotePadScreenState extends State<NotePadScreen> {
     return formattedDate;
   }
 
-  String _getSuffix(int day) {
+  static String _getSuffix(int day) {
     if (day >= 11 && day <= 13) {
       return 'th'; // Special case for 11, 12, and 13
     }
@@ -122,7 +122,7 @@ class _NotePadScreenState extends State<NotePadScreen> {
     }
   }
 
-  String _getMonth(int month) {
+  static String _getMonth(int month) {
     const List<String> months = [
       'January',
       'February',
@@ -140,12 +140,15 @@ class _NotePadScreenState extends State<NotePadScreen> {
     return months[month - 1];
   }
 
-  String _formatTime(DateTime dateTime) {
+  static String _formatTime(DateTime dateTime) {
     final String hour =
         dateTime.hour % 12 == 0 ? '12' : (dateTime.hour % 12).toString();
     final String minute = dateTime.minute.toString().padLeft(2, '0');
+    final String second =
+        dateTime.second.toString().padLeft(2, '0'); // Include seconds
     final String period = dateTime.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $period';
+
+    return '$hour:$minute:$second $period'; // Include seconds in the return string
   }
 
   // Save the current changes and reset history
