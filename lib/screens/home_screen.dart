@@ -138,18 +138,37 @@ class _HomeScreenState extends State<HomeScreen> {
                           });
                           final noteProvider =
                               Provider.of<NoteProvider>(context, listen: false);
-                          for (var note in noteProvider.notes) {
-                            if (note.isSelected) {
+                          if (_searchController.text.isEmpty) {
+                            for (var note in noteProvider.notes) {
+                              if (note.isSelected) {
+                                noteProvider.switchToNoteAt(note);
+                                noteProvider.updateCurrentNoteIsSelected();
+                              }
+
+                              setState(() {
+                                _selectedNotes.add(note);
+                              });
+
                               noteProvider.switchToNoteAt(note);
                               noteProvider.updateCurrentNoteIsSelected();
                             }
-                            setState(() {
-                              _selectedNotes.add(note);
-                            });
-                            noteProvider.switchToNoteAt(note);
-                            noteProvider.updateCurrentNoteIsSelected();
+                            noteProvider.filterNotesByPinned();
+                          } else {
+                            for (var note in _filteredNotes) {
+                              if (note.isSelected) {
+                                noteProvider.switchToNoteAt(note);
+                                noteProvider.updateCurrentNoteIsSelected();
+                              }
+
+                              setState(() {
+                                _selectedNotes.add(note);
+                              });
+
+                              noteProvider.switchToNoteAt(note);
+                              noteProvider.updateCurrentNoteIsSelected();
+                            }
+                            noteProvider.filterNotesByPinned();
                           }
-                          noteProvider.filterNotesByPinned();
                         },
                         child: Icon(
                           Icons.select_all_outlined,
