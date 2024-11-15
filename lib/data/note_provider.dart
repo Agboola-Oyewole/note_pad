@@ -43,6 +43,7 @@ class NoteProvider extends ChangeNotifier {
           isPinned: false,
           isSelected: false,
           date: _formatDate(DateTime.now()),
+          textAlign: TextAlign.left,
         ),
       ];
     }
@@ -70,13 +71,31 @@ class NoteProvider extends ChangeNotifier {
   }
 
   void addNote() {
+    // int noteNumber = 1;
+    int highestNumber = 0;
+    // while (_notes.any((note) => note.title == 'New Note $noteNumber')) {
+    //   noteNumber++;
+    // }
+    for (var note in _notes) {
+      if (note.title.startsWith('New Note')) {
+        final parts = note.title.split(' ');
+        if (parts.length == 3) {
+          final number = int.tryParse(parts[2]) ?? 0;
+          if (number > highestNumber) {
+            highestNumber = number;
+          }
+        }
+      }
+    }
+    int nextNumber = highestNumber + 1;
     _notes.add(
       Note(
-        title: 'New Note ${_notes.length}',
+        title: 'New Note $nextNumber',
         content: '',
         textStyle: const TextStyle(fontSize: 18),
         isPinned: false,
         isSelected: false,
+        textAlign: TextAlign.left,
         date: _formatDate(DateTime.now()),
       ),
     );
@@ -102,6 +121,12 @@ class NoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateCurrentNoteTextAlignStyle(TextAlign newStyle) {
+    _notes[_currentNoteIndex].textAlign = newStyle;
+    saveNotes();
+    notifyListeners();
+  }
+
   void updateCurrentNoteIsPinned() {
     _notes[_currentNoteIndex].isPinned = !_notes[_currentNoteIndex].isPinned;
     saveNotes();
@@ -115,7 +140,8 @@ class NoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void deleteNoteAt(int index) {
+  void deleteNoteAt(Note note) {
+    int index = _notes.indexOf(note);
     if (index >= 0 && index < _notes.length) {
       _notes.removeAt(index); // Remove the note at the specified index
       saveNotes(); // Save the updated list to SharedPreferences
@@ -125,13 +151,7 @@ class NoteProvider extends ChangeNotifier {
 
   void switchToNoteAt(Note note) {
     // Find the index of the note in the _notes list
-    print(note.title);
-    // print(_notes[0].title);
-    // print(_notes[1].title);
-    // print(_notes[2].title);
-    // print(_notes[3].title);
     int index = _notes.indexOf(note);
-    print(index);
     // Check if the note exists in the list
     if (index != -1) {
       _currentNoteIndex = index;
@@ -154,6 +174,12 @@ class NoteProvider extends ChangeNotifier {
 
     // Define a date format matching your note date format, including seconds
     final dateFormat = DateFormat("d'th' MMMM yyyy h:mm:ss a");
+
+    pinnedNotes.sort((a, b) {
+      final DateTime dateA = dateFormat.parse(a.date);
+      final DateTime dateB = dateFormat.parse(b.date);
+      return dateB.compareTo(dateA); // Descending order
+    });
 
     // Sort unpinned notes by date in descending order (latest first)
     unpinnedNotes.sort((a, b) {

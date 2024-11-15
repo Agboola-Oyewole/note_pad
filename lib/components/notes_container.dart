@@ -35,16 +35,46 @@ class NotesContainer extends StatelessWidget {
       return '$day $month $year $hour:$minute $period';
     }
 
+    String getNoteContent(String value) {
+      String firstWord = '';
+
+      if (value.contains('\n')) {
+        // Use the existing firstWord variable
+        firstWord = '${value
+            .split('\n')
+            .first}...';
+        if (firstWord.length > 50) {
+          firstWord = '${value.substring(0, 50)}....';
+        }
+      } else {
+        if (value.isEmpty) {
+          firstWord = 'No text';
+        } else {
+          if (value.length > 50) {
+            firstWord = '${value.substring(0, 50)}....';
+          } else {
+            firstWord = value;
+          }
+        }
+      }
+
+      return firstWord;
+    }
+
     return Container(
       decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
+          color: Theme
+              .of(context)
+              .brightness == Brightness.dark
               ? Color(0xFF333333) // Color for dark mode
               : Colors.white, // Dark background color for the search bar
           borderRadius: BorderRadius.circular(15),
           border: note.isSelected
-              ? Theme.of(context).brightness == Brightness.dark
-                  ? Border.all(color: Colors.white, width: 2)
-                  : Border.all(color: Colors.black, width: 2)
+              ? Theme
+              .of(context)
+              .brightness == Brightness.dark
+              ? Border.all(color: Colors.white, width: 2)
+              : Border.all(color: Colors.black, width: 2)
               : null),
       padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 20),
       child: Column(
@@ -57,16 +87,18 @@ class NotesContainer extends StatelessWidget {
                 note.title,
                 style: TextStyle(
                     fontWeight: FontWeight.w900,
-                    fontSize: 20,
-                    color: Theme.of(context).brightness == Brightness.dark
+                    fontSize: 17,
+                    color: Theme
+                        .of(context)
+                        .brightness == Brightness.dark
                         ? Colors.white
                         : Colors.black),
               ),
               note.isPinned
                   ? Icon(
-                      Icons.push_pin,
-                      color: Color(0xffB17457),
-                    )
+                Icons.push_pin,
+                color: Color(0xffB17457),
+              )
                   : Container()
             ],
           ),
@@ -74,15 +106,13 @@ class NotesContainer extends StatelessWidget {
             height: 8,
           ),
           Text(
-            note.content.isEmpty
-                ? 'No text'
-                : note.content.length > 50
-                    ? '${note.content.substring(0, 50)}....'
-                    : note.content,
+            getNoteContent(note.content),
             style: TextStyle(
                 fontWeight: FontWeight.w700,
-                fontSize: 15,
-                color: Theme.of(context).brightness == Brightness.dark
+                fontSize: 12,
+                color: Theme
+                    .of(context)
+                    .brightness == Brightness.dark
                     ? Colors.grey[400]
                     : Colors.grey[600]),
           ),
@@ -93,7 +123,7 @@ class NotesContainer extends StatelessWidget {
             formatFullDateString(note.date),
             style: TextStyle(
                 fontWeight: FontWeight.w700,
-                fontSize: 15,
+                fontSize: 12,
                 color: Color(0xffB17457)),
           ),
         ],
@@ -134,7 +164,7 @@ class NotesGridContainer extends StatelessWidget {
 
       // Step 2: Parse the date with seconds
       DateTime parsedDate =
-          DateFormat("d MMMM yyyy h:mm:ss a").parse(dateString);
+      DateFormat("d MMMM yyyy h:mm:ss a").parse(dateString);
 
       // Step 3: Reformat the parsed date into the desired format without the seconds
       String formattedDate = DateFormat("d MMMM h:mm a").format(parsedDate);
@@ -147,15 +177,47 @@ class NotesGridContainer extends StatelessWidget {
           parsedDate.day.toString(), dayWithSuffix);
     }
 
+    String getNoteContent(String value) {
+      String firstWord = '';
+
+      if (value.contains('\n')) {
+        // Use the existing firstWord variable
+        firstWord = '${value
+            .split('\n')
+            .first}...';
+        if (value.length > 13) {
+          firstWord = '${value.substring(0, 13)}....';
+        }
+      } else {
+        if (value.isEmpty) {
+          firstWord = 'No text';
+        } else {
+          if (value.length > 13) {
+            firstWord = '${value.substring(0, 13)}....';
+          } else {
+            firstWord = value;
+          }
+        }
+      }
+
+      return firstWord;
+    }
+
     return Container(
       decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
+          color: Theme
+              .of(context)
+              .brightness == Brightness.dark
               ? Color(0xFF333333) // Color for dark mode
               : Colors.white, // Color for light mode
           // Dark background color for the search bar
           borderRadius: BorderRadius.circular(15),
           border: note.isSelected
+              ? Theme
+              .of(context)
+              .brightness == Brightness.dark
               ? Border.all(color: Colors.white, width: 2)
+              : Border.all(color: Colors.black, width: 2)
               : null),
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20),
       child: Column(
@@ -167,27 +229,29 @@ class NotesGridContainer extends StatelessWidget {
               Text(
                 note.isPinned
                     ? note.title.isEmpty
-                        ? 'No title'
-                        : note.title.length > 7
-                            ? '${note.title.substring(0, 7)}....'
-                            : note.title
+                    ? 'No title'
+                    : note.title.length > 7
+                    ? '${note.title.substring(0, 7)}....'
+                    : note.title
                     : note.title.isEmpty
-                        ? 'No title'
-                        : note.title.length > 15
-                            ? '${note.title.substring(0, 15)}....'
-                            : note.title,
+                    ? 'No title'
+                    : note.title.length > 15
+                    ? '${note.title.substring(0, 15)}....'
+                    : note.title,
                 style: TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 16,
-                    color: Theme.of(context).brightness == Brightness.dark
+                    color: Theme
+                        .of(context)
+                        .brightness == Brightness.dark
                         ? Colors.white
                         : Colors.black),
               ),
               note.isPinned
                   ? Icon(
-                      Icons.push_pin,
-                      color: Color(0xffB17457),
-                    )
+                Icons.push_pin,
+                color: Color(0xffB17457),
+              )
                   : Container()
             ],
           ),
@@ -195,15 +259,13 @@ class NotesGridContainer extends StatelessWidget {
             height: 16,
           ),
           Text(
-            note.content.isEmpty
-                ? 'No text'
-                : note.content.length > 20
-                    ? '${note.content.substring(0, 20)}....'
-                    : note.content,
+            getNoteContent(note.content),
             style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
-                color: Theme.of(context).brightness == Brightness.dark
+                color: Theme
+                    .of(context)
+                    .brightness == Brightness.dark
                     ? Colors.grey[400]
                     : Colors.grey[600]),
           ),
@@ -212,22 +274,22 @@ class NotesGridContainer extends StatelessWidget {
           ),
           note.content.length <= 15
               ? Padding(
-                  padding: const EdgeInsets.only(top: 20.0),
-                  child: Text(
-                    reformatDate(note.date),
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: Color(0xffB17457)),
-                  ),
-                )
+            padding: const EdgeInsets.only(top: 15.0),
+            child: Text(
+              reformatDate(note.date),
+              style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: Color(0xffB17457)),
+            ),
+          )
               : Text(
-                  reformatDate(note.date),
-                  style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      color: Color(0xffB17457)),
-                ),
+            reformatDate(note.date),
+            style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: Color(0xffB17457)),
+          ),
         ],
       ),
     );

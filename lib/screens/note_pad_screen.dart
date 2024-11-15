@@ -36,6 +36,8 @@ class _NotePadScreenState extends State<NotePadScreen> {
       // Set font size from current note's textStyle
       _fontSize = noteProvider.currentNote.textStyle.fontSize ?? 18;
 
+      _textAlign = noteProvider.currentNote.textAlign;
+
       // Set bold if font weight is greater than or equal to FontWeight.w700 (700 or above is bold)
       _isBold =
           noteProvider.currentNote.textStyle.fontWeight == FontWeight.bold;
@@ -157,6 +159,7 @@ class _NotePadScreenState extends State<NotePadScreen> {
     noteProvider.updateCurrentNoteTitle(_titleController.text);
     noteProvider.updateCurrentNoteContent(_contentController.text);
     noteProvider.updateCurrentNoteTextStyle(_currentStyle);
+    noteProvider.updateCurrentNoteTextAlignStyle(_textAlign);
     noteProvider.updateCurrentNoteDate(_formatDate(DateTime.now()));
     noteProvider.filterNotesByPinned();
     setState(() {});
@@ -259,7 +262,7 @@ class _NotePadScreenState extends State<NotePadScreen> {
           return;
         }
         final navigator = Navigator.of(context);
-        _saveChanges();
+        _isSaved ? null : _saveChanges();
 
         navigator.pop(result);
       },
@@ -270,7 +273,7 @@ class _NotePadScreenState extends State<NotePadScreen> {
           backgroundColor: Theme.of(context).colorScheme.surface,
           leading: GestureDetector(
             onTap: () {
-              _saveChanges();
+              _isSaved ? null : _saveChanges();
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const HomeScreen(),
@@ -297,7 +300,9 @@ class _NotePadScreenState extends State<NotePadScreen> {
                             ? Theme.of(context).brightness == Brightness.dark
                                 ? Colors.white
                                 : Colors.black
-                            : Colors.grey[300],
+                            : Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[800]
+                                : Colors.grey[300],
                         size: 28),
                     onPressed: _historyIndex > 0 ? _undo : null,
                   ),
@@ -308,7 +313,9 @@ class _NotePadScreenState extends State<NotePadScreen> {
                             ? Theme.of(context).brightness == Brightness.dark
                                 ? Colors.white
                                 : Colors.black
-                            : Colors.grey[300],
+                            : Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[800]
+                                : Colors.grey[300],
                         size: 28),
                     onPressed: _historyIndex < _contentHistory.length - 1
                         ? _redo
@@ -318,7 +325,9 @@ class _NotePadScreenState extends State<NotePadScreen> {
                   IconButton(
                     icon: Icon(Icons.check,
                         color: _isSaved
-                            ? Colors.grey[300]
+                            ? Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[800]
+                                : Colors.grey[300]
                             : Theme.of(context).brightness == Brightness.dark
                                 ? Colors.white
                                 : Colors.black,
@@ -359,7 +368,7 @@ class _NotePadScreenState extends State<NotePadScreen> {
                         color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.white
                             : Colors.black,
-                        fontSize: 30,
+                        fontSize: 25,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -376,11 +385,9 @@ class _NotePadScreenState extends State<NotePadScreen> {
                     TextField(
                       controller: _contentController,
                       maxLines: null,
-                      cursorColor:
-                          Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black,
+                      cursorColor: Color(0xffB17457),
                       decoration: InputDecoration(
+                        focusColor: Color(0xffB17457),
                         hintText: 'Start Typing',
                         hintStyle: TextStyle(
                             color:

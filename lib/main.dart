@@ -19,9 +19,9 @@ void main() {
                 .black, // Optional: Customize AppBar background for dark mode
           ),
           textSelectionTheme: TextSelectionThemeData(
-            cursorColor: Colors.black,
-            selectionColor: Colors.black.withOpacity(0.5),
-            selectionHandleColor: Colors.black,
+            cursorColor: Color(0xffB17457),
+            selectionColor: Color(0xffB17457).withOpacity(0.5),
+            selectionHandleColor: Color(0xffB17457),
           ),
           brightness: Brightness.light,
           fontFamily: 'Poppins',
@@ -34,9 +34,9 @@ void main() {
                 .black, // Optional: Customize AppBar background for dark mode
           ),
           textSelectionTheme: TextSelectionThemeData(
-            cursorColor: Colors.white,
-            selectionColor: Colors.white.withOpacity(0.5),
-            selectionHandleColor: Colors.white,
+            cursorColor: Color(0xffB17457),
+            selectionColor: Color(0xffB17457).withOpacity(0.5),
+            selectionHandleColor: Color(0xffB17457),
           ),
           brightness: Brightness.dark,
           fontFamily: 'Poppins',
