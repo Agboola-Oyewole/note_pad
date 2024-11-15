@@ -833,18 +833,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                     onPressed: () {
                                       for (var note in _selectedNotes) {
                                         noteProvider.switchToNoteAt(note);
-                                        noteProvider.deleteNoteAt(note);
                                         if (noteProvider.notes.isNotEmpty) {
                                           noteProvider
                                               .updateCurrentNoteIsSelected();
                                         }
                                         if (note.isSelected) {
-                                          noteProvider.switchToNoteAt(note);
                                           if (noteProvider.notes.isNotEmpty) {
+                                            noteProvider.switchToNoteAt(note);
+
                                             noteProvider
                                                 .updateCurrentNoteIsSelected();
                                           }
                                         }
+                                        noteProvider.deleteNoteAt(note);
                                       }
 
                                       setState(() {});
