@@ -274,7 +274,7 @@ class _NotePadScreenState extends State<NotePadScreen> {
           leading: GestureDetector(
             onTap: () {
               _isSaved ? null : _saveChanges();
-              Navigator.of(context).push(
+              Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (context) => const HomeScreen(),
                 ),
